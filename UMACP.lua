@@ -1,27 +1,16 @@
+--------------------------------------------------------------
+------------------------ UMACP -------------------------
+-- This is a modification of the MACP 
+-- mod originally developed by Winter
+-- for the XPLANE community <3
+-- Original Mod -> https://forums.x-plane.org/index.php?/files/file/86193-macp-mini-autopilot-control-panel-for-xplane-12/&tab=reviews
+--------------------------------------------------------------
+-- UMACP stands for Ultra Mini Autopilot Control Panel 
+-- Ultra Modifications by TreeBaron
+-- This script (and its derivatives) is, and will always be, FREEWARE. Thx for using it :)
+
 ------------------------------------------------------------
----------------------- MACP V 1.1 --------------------------
--------------------------------- By Winter -----------------
--------------------------------- for the XPLANE community --
-------------------------------------------------------------
-
--- This script is, and will always be, FREEWARE. Thx for using it :-)
-
--- 1.0
--- Initial release, may 2021. A few days before my dad passed. Rip dad.
-
--- 1.01 May 2022
--- added auto descent mode - experimental - 
--- fixed a bug with the maximize / minimize button click
--- Displays aircraft ICAO
--- Inactive buttons now gray instead of red
-
---1.1 september 2022
--- Trying to update datarefs for XP12
--- TODO : fix ath, fix flch
--- local ln_at = dataref_table("sim/cockpit2/autopilot/autothrottle_on", "readonly")
--- local ln_flc = dataref_table("sim/cockpit2/autopilot/speed_status", "readonly")
-------------------------------------------------------------
---- window parameters
+--- window parameter=
 ------------------------------------------------------------
 window_border_color = {0.0, 0.0 , 0.0} 	-- these are RGB values, 0 to 1. Try some !
 window_background_color = {0.0, 0.3 , 0.7}
@@ -39,6 +28,7 @@ sep_width = 8	;	sep_height = 6		-- Size of the separator between buttons = 8 / 6
 DataRef("dr_act_alt", "sim/cockpit2/gauges/indicators/altitude_ft_pilot", "readonly")		-- actual altitude
 DataRef("dr_act_spd", "sim/flightmodel/position/indicated_airspeed", "readonly") 			-- actual airspeed in knots
 dataref("dr_act_vs", "sim/cockpit2/gauges/indicators/vvi_fpm_pilot", "readonly")			-- actual vs
+DataRef("dr_compass", "sim/cockpit2/gauges/indicators/ground_track_mag_pilot", "readonly")	-- compass (indicated heading)
 DataRef("dr_fd_mode", "sim/cockpit2/autopilot/flight_director_mode", "writable")			-- Flight director mode : 0 fd off / 1 fd on / 2 ap on
 DataRef("dr_at", "sim/cockpit2/autopilot/autothrottle_on", "readonly")						-- Auto thrust 0 / 1
 DataRef("dr_ap_speed", "sim/cockpit2/autopilot/airspeed_dial_kts_mach", "writable")			-- ap speed in knots. Mach not supported yet
@@ -259,14 +249,14 @@ function init_graphics()															-- Calculate the coordinates of graphics 
 	window_width = 6 * sep_width + 5 * btn_width	;	window_height = 3 * sep_height + 5 * btn_height
 	btn_desc_x = btn_max_x + window_width + 5 		;	btn_desc_y = btn_max_y
 	--- Group AP
-	btn_ap_x = window_x + sep_width					;	btn_ap_y = window_y + sep_height
-	btn_fd_x = window_x + sep_width					;	btn_fd_y = btn_ap_y + btn_height + sep_height 
+	btn_ap_x = window_x + sep_width					;	btn_ap_y = window_y + btn_height + btn_height + btn_height + sep_height
+	btn_fd_x = window_x + sep_width					;	btn_fd_y = btn_ap_y + btn_height + sep_height
 	--- Group SPEED
-	btn_flc_x = btn_ap_x + btn_width + sep_width	;	btn_flc_y = btn_ap_y + 2 * btn_height + sep_height
+	btn_flc_x = (window_x + sep_width) + btn_width + sep_width	;	btn_flc_y = (window_y + sep_height) + 2 * btn_height + sep_height
 	sel_spd_x = btn_flc_x							;	sel_spd_y = btn_flc_y + btn_height
 	btn_at_x = btn_flc_x							;	btn_at_y = sel_spd_y + btn_height 
 	--- Group VERTICAL SPEED
-	sel_vs_x = btn_flc_x + btn_width + sep_width	;	sel_vs_y = btn_ap_y 
+	sel_vs_x = btn_flc_x + btn_width + sep_width	;	sel_vs_y = (window_y + sep_height) 
 	btn_vs_x = sel_vs_x								;	btn_vs_y = sel_vs_y +  btn_height 
 	--- Group ALTITUDE
 	sel_alt_x = btn_vs_x							;	sel_alt_y = sel_spd_y
@@ -406,6 +396,17 @@ function desc_calc()																-- Calculate suggested VS to reach the next 
 	end
 end
 
+function comma_value(amount)
+  local formatted = amount
+  while true do  
+    formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+    if (k==0) then
+      break
+    end
+  end
+  return formatted
+end
+
 ------------------------------------------------------------
 --- Main
 ------------------------------------------------------------
@@ -422,10 +423,23 @@ function main_chunk()
 			draw_string(window_x + 3, window_y + window_height + 8, " MACP 1.0", "white" )					-- title
 		end
 		
-		frame(window_x + sep_width , window_y + 2 * btn_height + 3 * sep_height, btn_width, 2 * btn_height + 2 * sep_height , {1.0, 0.5 , 0.5} , {0.1, 0.1 , 0.1}) 	
-		draw_string(btn_fd_x + 3, btn_at_y + 4, math.floor(dr_act_spd), "yellow") 				-- actual speed
-		draw_string(btn_fd_x + 3, btn_at_y - 11, math.floor(dr_act_alt), "yellow") 				-- actual alt
-		draw_string(btn_fd_x + 3, btn_at_y - 26, math.floor(dr_act_vs), "yellow") 				-- actual VS
+		local offsetWindow = -12
+		frame(window_x + sep_width + window_width - 5, 
+		window_y + (2 * btn_height) + (3 * sep_height) + offsetWindow,
+		btn_width+45, -- width
+		2 * btn_height + 2 * sep_height + 19, -- height
+		{1.0, 0.5 , 0.5},
+		{0.1, 0.1 , 0.1})
+		
+		local movingDownPosition = btn_at_y + 19 + offsetWindow
+		draw_string(btn_fd_x + window_width, movingDownPosition, "HDG  "..math.floor(dr_compass), "green") 				-- heading
+		movingDownPosition = movingDownPosition - 15
+		draw_string(btn_fd_x + window_width, movingDownPosition,  "SPD  "..math.floor(dr_act_spd), "white") 			-- actual speed
+		movingDownPosition = movingDownPosition - 15
+		draw_string(btn_fd_x + window_width, movingDownPosition, "ALT  "..comma_value(math.floor(dr_act_alt)), "green") 	-- actual alt
+		movingDownPosition = movingDownPosition - 15
+		draw_string(btn_fd_x + window_width, movingDownPosition, "VS   "..math.floor(dr_act_vs), "white") 				-- actual VS
+		-- draw_string_Helvetica_18( x, y, "string" 		
 				
 		if dr_thr_mode == 3 then 														-- let's draw the gauges
 			linear_gauge(btn_at_x , btn_ap_y , 10 , 40 , {1.0, 0.0 , 0.0} , dr_n1 / 100 , 1 , 0) -- thrust reverse
