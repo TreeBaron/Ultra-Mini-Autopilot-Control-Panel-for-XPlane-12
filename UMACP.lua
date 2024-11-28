@@ -1,5 +1,5 @@
 --------------------------------------------------------------
------------------------- UMACP -------------------------
+------------------------ UMACP -------------------------------
 -- This is a modification of the MACP 
 -- mod originally developed by Winter
 -- for the XPLANE community <3
@@ -8,15 +8,20 @@
 -- UMACP stands for Ultra Mini Autopilot Control Panel 
 -- Ultra Modifications by TreeBaron
 -- This script (and its derivatives) is, and will always be, FREEWARE. Thx for using it :)
+--------------------------------------------------------------
+-- Goals of 'Ultra' Modifications
+-- 1. Reduce complexity and size of the interface
+-- 2. Make it more compatible with MiniHUD mod
+-- 3. Auto-view switching in future? Other mods that diverge from MACPs purpose.
 
 ------------------------------------------------------------
 --- window parameter=
 ------------------------------------------------------------
 window_border_color = {0.0, 0.0 , 0.0} 	-- these are RGB values, 0 to 1. Try some !
-window_background_color = {0.0, 0.3 , 0.7}
-opacity = 0.6							-- opacity of the window = 0.6
+window_background_color = {0.01, 0.01 , 0.01}
+opacity = 0.4							-- opacity of the window
 maximized = 1							-- 1 if window is visible at startup
-draw_title_bar = 0						-- 0 to hide title bar, 1 to show. Pretty useless I guess.
+draw_title_bar = 1						-- 0 to hide title bar, 1 to show. Pretty useless I guess.
 window_x = 15	;	window_y = 70		-- Defaut position of the window = 15 / 75 
 btn_width = 45	;	btn_height = 20		-- size of the buttons. You may adjust sizes at will = 45 / 20
 sep_width = 8	;	sep_height = 6		-- Size of the separator between buttons = 8 / 6
@@ -380,21 +385,6 @@ end
 ------------------------------------------------------------
 --- Inner functions
 ------------------------------------------------------------
-function desc_calc()																-- Calculate suggested VS to reach the next waypoint at dialed altitude
-	desc_calc_altitude_difference = dr_alt - dr_act_alt
-	if math.abs(desc_calc_altitude_difference) > 500 then
-		desc_calc_target_vs = desc_calc_altitude_difference / dr_time_to_wpt
-		frame(btn_max_x + btn_width + sep_width - 2, btn_max_y, 220, 20, {0.0, 0.0 , 0.0} , {0.3, 0.3 , 0.4})
-		draw_string(btn_max_x + btn_width + sep_width ,  btn_max_y + 6 ,"VS to "..dr_wpt.." @ "..dr_alt.." ft : "..math.floor(desc_calc_target_vs).." ft/min ","yellow")
-		if desc_mode == 1 then
-			button(btn_desc_x, btn_desc_y, "DES", 1 , 0)
-			if dr_vs > desc_calc_target_vs then command_once("sim/autopilot/vertical_speed_down") end --ok
-			if dr_vs < desc_calc_target_vs then command_once("sim/autopilot/vertical_speed_up") end --ok
-		else
-			button(btn_desc_x, btn_desc_y, "DES", 0 , 0)
-		end
-	end
-end
 
 function comma_value(amount)
   local formatted = amount
@@ -412,15 +402,15 @@ end
 ------------------------------------------------------------
 function main_chunk()
 	init_graphics()	
-	if maximized == 0 then button(btn_max_x, btn_max_y, "ACP", 0, 0) end 			-- Minimize / maximize window
+	if maximized == 0 then button(btn_max_x, btn_max_y, "UACP", 0, 0) end 			-- Minimize / maximize window
 	if maximized == 1 then
 		
-		button(btn_max_x, btn_max_y, "ACP", 1 , 0)														
+		button(btn_max_x, btn_max_y, "UACP", 1 , 0)														
 		frame(window_x, window_y , window_width, window_height, window_border_color, window_background_color) 	-- draw main window
 		
 		if draw_title_bar == 1 then
 			frame(window_x, window_y + window_height, window_width, 25, window_border_color, window_background_color)-- draw window title bar
-			draw_string(window_x + 3, window_y + window_height + 8, " MACP 1.0", "white" )					-- title
+			draw_string(window_x + 3, window_y + window_height + 8, "ULTRA MACP", "white" )					-- title
 		end
 		
 		local offsetWindow = -12
@@ -469,7 +459,6 @@ function main_chunk()
 		displayer(dsp_dtk_x, dsp_dtk_y, math.floor(dr_dist_to_wpt).."n")
 		displayer(dsp_trk_x, dsp_trk_y, math.floor(dr_hdg_to_wpt).."°")
 		displayer(dsp_wpt_x, dsp_wpt_y, dr_wpt, "white")
-		desc_calc()		
 		----------------  AP  --------------------------------
 		if dr_fd_mode == 0 then -- FD off, AP off
 			button(btn_fd_x, btn_fd_y, "F/D",0 , 0)	
