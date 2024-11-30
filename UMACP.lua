@@ -112,12 +112,6 @@ function btn_ap_click()
 	end
 end
 
-function btn_at_click()
-	if maximized == 1 and btn_click(btn_at_x , btn_at_y) == 1 then 
-		command_once("sim/autopilot/autothrottle_toggle")
-	end
-end
-
 function btn_alt_click()
 	if maximized == 1 and btn_click(btn_alt_x , btn_alt_y )then 
 		command_once("sim/autopilot/altitude_hold")
@@ -185,17 +179,10 @@ function sel_hdg_scroll()
 	if maximized == 1 and MOUSE_X > sel_hdg_x and MOUSE_X < sel_hdg_x + btn_width and MOUSE_Y > sel_hdg_y and MOUSE_Y < sel_hdg_y + btn_height then	dr_hdg = math.floor((dr_hdg + 0.5) + MOUSE_WHEEL_CLICKS) end
 end
 
-function sel_nav_scroll()
-	if maximized == 1 and MOUSE_X > sel_loc_x and MOUSE_X < sel_loc_x + btn_width and MOUSE_Y > sel_loc_y and MOUSE_Y < sel_loc_y + btn_height then	dr_nav1_freq = dr_nav1_freq + MOUSE_WHEEL_CLICKS * 5 end
-	if dr_nav1_freq < 10800 then dr_nav1_freq = 10800 end
-	if dr_nav1_freq > 11795 then dr_nav1_freq = 11795 end
-end
-
 function check_click_events()
 	btn_max_click()
 	btn_fd_click()
 	btn_ap_click()
-	btn_at_click()
 	btn_alt_click()
 	btn_vs_click()
 	btn_loc_click()
@@ -213,7 +200,6 @@ function check_scroll_events()
 	sel_vs_scroll()
 	sel_spd_scroll()
 	sel_hdg_scroll()
-	sel_nav_scroll()
 end
 do_on_mouse_wheel("check_scroll_events()")
 
@@ -229,26 +215,38 @@ do_every_frame("check_alt()")
 --- Graphical utilities
 ------------------------------------------------------------
 function init_graphics()															-- Calculate the coordinates of graphics elements
+	
 	--- Main Window
 	btn_max_x = 15									;	btn_max_y = 20
 	window_width = 6 * sep_width + 5 * btn_width	;	window_height = 3 * sep_height + 5 * btn_height
 	btn_desc_x = btn_max_x + window_width + 5 		;	btn_desc_y = btn_max_y
 	--- Group AP
-	btn_ap_x = window_x + sep_width					;	btn_ap_y = window_y + btn_height + btn_height + btn_height + sep_height
-	btn_fd_x = window_x + sep_width					;	btn_fd_y = btn_ap_y + btn_height + sep_height
+	btn_ap_x = window_x + 100	
+	btn_ap_y = window_y + 100
+	btn_fd_x = window_x + btn_width
+	btn_fd_y = window_y + btn_height
 	--- Group VERTICAL SPEED
-	sel_vs_x = btn_ap_x + btn_width + sep_width	;	sel_vs_y = (window_y + sep_height) 
-	btn_vs_x = sel_vs_x								;	btn_vs_y = sel_vs_y +  btn_height 
+	sel_vs_x = window_x + 200
+	sel_vs_y = window_y + 200
+	btn_vs_x = window_x + btn_width
+	btn_vs_y = window_y + btn_height
 	--- Group ALTITUDE
-	sel_alt_x = btn_vs_x							;	sel_alt_y = sel_spd_y
-	btn_alt_x = btn_vs_x							;	btn_alt_y = sel_alt_y + btn_height
+	sel_alt_x = 100
+	sel_alt_y = 100
+	btn_alt_x = 150
+	btn_alt_y = 100
 	--- Group HEADING
-	sel_hdg_x = sel_alt_x + btn_width + sep_width	;	sel_hdg_y = sel_vs_y 
-	btn_hdg_x = sel_hdg_x							;	btn_hdg_y = sel_hdg_y +  btn_height 
+	sel_hdg_x = 100
+	sel_hdg_y = 100
+	btn_hdg_x = 100
+	btn_hdg_y = 100
 	--- Group NAV1 freq.
-	btn_app_x = sel_hdg_x							;	btn_app_y = btn_hdg_y  + btn_height + sep_height	
-	sel_loc_x = sel_hdg_x							;	sel_loc_y = btn_app_y  + btn_height
-	btn_loc_x = sel_hdg_x							;	btn_loc_y = btn_app_y  + 2 * btn_height	
+	btn_app_x = 100
+	btn_app_y = 100
+	sel_loc_x = 100
+	sel_loc_y = 100
+	btn_loc_x = 100
+	btn_loc_y = 100
 end
 
 function frame(x , y , width , height , line_color , background_color) 				-- draw a colored frame with outline
@@ -384,63 +382,48 @@ function main_chunk()
 		end
 		
 		local offsetWindow = -12
-		frame(window_x + sep_width + window_width - 5, 
-		window_y + (2 * btn_height) + (3 * sep_height) + offsetWindow,
-		btn_width+45, -- width
-		2 * btn_height + 2 * sep_height + 19, -- height
+		local headingWindowX = window_x + sep_width + window_width
+		local headingWindowY = window_y + 20
+		frame(headingWindowX, 
+		headingWindowY,
+		100, -- width
+		120, -- height
 		{1.0, 0.5 , 0.5},
 		{0.1, 0.1 , 0.1})
 		
-		local movingDownPosition = btn_at_y + 19 + offsetWindow
-		draw_string(btn_fd_x + window_width, movingDownPosition, "HDG  "..math.floor(dr_compass), "green") 				-- heading
-		movingDownPosition = movingDownPosition - 15
-		draw_string(btn_fd_x + window_width, movingDownPosition,  "SPD  "..math.floor(dr_act_spd), "white") 			-- actual speed
-		movingDownPosition = movingDownPosition - 15
-		draw_string(btn_fd_x + window_width, movingDownPosition, "ALT  "..comma_value(math.floor(dr_act_alt)), "green") 	-- actual alt
-		movingDownPosition = movingDownPosition - 15
-		draw_string(btn_fd_x + window_width, movingDownPosition, "VS   "..math.floor(dr_act_vs), "white") 				-- actual VS
+		local btnBaseY = headingWindowY + 100;
+		draw_string(headingWindowX + sep_width, btnBaseY, "HDG  "..math.floor(dr_compass), "green") 				-- heading
+		draw_string(headingWindowX + sep_width, btnBaseY - ((sep_height + btn_height)*1), "SPD  "..math.floor(dr_act_spd), "white") 			-- actual speed
+		draw_string(headingWindowX + sep_width, btnBaseY - ((sep_height + btn_height)*2), "ALT  "..comma_value(math.floor(dr_act_alt)), "green") 	-- actual alt
+		draw_string(headingWindowX + sep_width, btnBaseY - ((sep_height + btn_height)*3), "VS   "..math.floor(dr_act_vs), "white") 				-- actual VS
 		-- draw_string_Helvetica_18( x, y, "string" 		
 				
-		if dr_flaps > 0 then 
-			linear_gauge(btn_at_x + 15 , btn_ap_y , 10 , 40 , {0.0, 1.0 , 0.0} , dr_flaps , 0 , 1) -- flaps 
-		end
-						
-		if dr_brakes == 1 then 
-			draw_string(btn_alt_x , sel_alt_y - 15, "BRAKES", "yellow")  -- brakes
-		else
-			draw_string(btn_alt_x + 5 , sel_alt_y - 15, dr_icao, "black")
-		end
-						
-		selector(sel_spd_x, sel_spd_y, math.floor(dr_ap_speed))
+		
 		if desc_mode == 0 then
 			selector(sel_vs_x, sel_vs_y, math.floor(dr_vs))
 		else
 			displayer(sel_vs_x, sel_vs_y, "AUTO")
 		end
-		selector(sel_alt_x, sel_alt_y,math.floor(dr_alt))
+		selector(sel_alt_x, sel_alt_y, math.floor(dr_alt))
 		selector(sel_hdg_x, sel_hdg_y, math.floor(dr_hdg + 0.5))
 		selector(sel_loc_x, sel_loc_y, dr_nav1_freq)
+		
+		
 		----------------  AP  --------------------------------
 		if dr_fd_mode == 0 then -- FD off, AP off
-			button(btn_fd_x, btn_fd_y, "F/D",0 , 0)	
 			button(btn_ap_x, btn_ap_y, "A/P", 0 , 0)
 			ap_is_on = 0	;	fd_is_on = 0		
 		end
 		
 		if dr_fd_mode == 1 then -- FD on, AP off
-			button(btn_fd_x, btn_fd_y, "F/D", 1 , 0)	
 			button(btn_ap_x, btn_ap_y, "A/P", 0 , 0)
 			ap_is_on = 0	;	fd_is_on = 1
 		end
 		
 		if dr_fd_mode == 2 then -- FD on, AP on
-			button(btn_fd_x, btn_fd_y, "F/D", 1 , 0)
 			button(btn_ap_x, btn_ap_y, "A/P", 1 , 0)
 			ap_is_on = 1	;	fd_is_on = 1
 		end
-		----------------  AT  --------------------------------
-		if dr_at == 1 then button(btn_at_x, btn_at_y, "A/TH", 1 , 0) end 
-		if dr_at == 0 then button(btn_at_x, btn_at_y, "A/TH", 0 , 0) end
 		----------------  ALT  --------------------------------
 		if dr_alt_hld == 2 then button(btn_alt_x, btn_alt_y, "ALT", 1 , 0) end 
 		if dr_alt_hld == 1 then button(btn_alt_x, btn_alt_y, "ALT", 0 , 1)	end
@@ -448,14 +431,14 @@ function main_chunk()
 		----------------  VS  --------------------------------
 		if dr_alt_mode == 3 or dr_alt_mode >= 5 then button(btn_vs_x, btn_vs_y, "V/S", 0 , 0) end -- other modes
 		if dr_alt_mode == 4 then	button(btn_vs_x, btn_vs_y, "V/S", 1 , 0) end  -- VS on
-		----------------  NAV  --------------------------------
-	----------------  APP  --------------------------------
+		----------------  APP  --------------------------------
 		if dr_app == 0 then	button(btn_app_x, btn_app_y, "APP", 0 , 0) end	-- off
 		if dr_app == 1 then	button(btn_app_x, btn_app_y, "APP", 0 , 1) end  -- arm
 		if dr_app == 2 then button(btn_app_x, btn_app_y, "APP", 1 , 0) end  -- on
-	----------------  HDG  --------------------------------
+		----------------  HDG  --------------------------------
 		if dr_hdg_mode == 0 or dr_hdg_mode == 1 then button(btn_hdg_x, btn_hdg_y, "HDG", 0 , 0) end
 		if dr_hdg_mode == 2 then button(btn_hdg_x, btn_hdg_y, "HDG", 1 , 0) end 
+
 	end
 end
 do_every_draw("main_chunk()")
