@@ -15,14 +15,14 @@
 -- 3. Auto-view switching in future? Other mods that diverge from MACPs purpose.
 
 ------------------------------------------------------------
---- window parameter=
+--- window parameter -- 
 ------------------------------------------------------------
 window_border_color = {0.0, 0.0 , 0.0} 	-- these are RGB values, 0 to 1. Try some !
 window_background_color = {0.01, 0.01 , 0.01}
 opacity = 0.4							-- opacity of the window
 maximized = 1							-- 1 if window is visible at startup
 draw_title_bar = 1						-- 0 to hide title bar, 1 to show. Pretty useless I guess.
-window_x = 15	;	window_y = 70		-- Defaut position of the window = 15 / 75 
+window_x = 650	;	window_y = 50		-- Defaut position of the window = 15 / 75 
 btn_width = 45	;	btn_height = 20		-- size of the buttons. You may adjust sizes at will = 45 / 20
 sep_width = 8	;	sep_height = 6		-- Size of the separator between buttons = 8 / 6
 
@@ -62,7 +62,7 @@ DataRef("dr_icao", "sim/aircraft/view/acf_ICAO", "writable")								-- aircraft 
 --- Global variables
 ------------------------------------------------------------
 dr_ap_speed = 250						-- defaut autopilot settings. Must be placed after datarefs declarations
-dr_alt = 30000
+dr_alt = 3000
 dr_vs = 0 
 dr_hdg = 0
 fd_is_on = 0							-- Dunno why, but accessing directly the datarefs is not always working in my code. gotta use those vars
@@ -140,15 +140,6 @@ function btn_vs_click()
 	end
 end
 
-function btn_gps_click()
-	if maximized == 1 and btn_click(btn_gps_x ,btn_gps_y ) then 
-		if dr_fd_mode > 0 then
-			command_once("sim/autopilot/hsi_select_gps") 
-			command_once("sim/autopilot/NAV") 
-		end
-	end
-end
-
 function btn_loc_click()
 	if maximized == 1 and btn_click(btn_loc_x , btn_loc_y ) == 1 then 
 		if dr_fd_mode > 0 then
@@ -217,7 +208,6 @@ function check_click_events()
 	btn_flc_click() 
 	btn_alt_click()
 	btn_vs_click()
-	btn_gps_click()
 	btn_loc_click()
 	btn_app_click()
 	btn_hdg_click()
@@ -250,7 +240,7 @@ do_every_frame("check_alt()")
 ------------------------------------------------------------
 function init_graphics()															-- Calculate the coordinates of graphics elements
 	--- Main Window
-	btn_max_x = 15									;	btn_max_y = 35
+	btn_max_x = 15									;	btn_max_y = 20
 	window_width = 6 * sep_width + 5 * btn_width	;	window_height = 3 * sep_height + 5 * btn_height
 	btn_desc_x = btn_max_x + window_width + 5 		;	btn_desc_y = btn_max_y
 	--- Group AP
@@ -266,14 +256,8 @@ function init_graphics()															-- Calculate the coordinates of graphics 
 	--- Group ALTITUDE
 	sel_alt_x = btn_vs_x							;	sel_alt_y = sel_spd_y
 	btn_alt_x = btn_vs_x							;	btn_alt_y = sel_alt_y + btn_height
-	--- Group GPS
-	dsp_ttk_x = btn_alt_x + btn_width + sep_width	;	dsp_ttk_y = sel_vs_y  + sep_height
-	dsp_dtk_x = dsp_ttk_x							;	dsp_dtk_y = dsp_ttk_y + btn_height
-	dsp_trk_x = dsp_ttk_x							;	dsp_trk_y = dsp_ttk_y + 2 * btn_height
-	dsp_wpt_x = dsp_ttk_x							;	dsp_wpt_y = dsp_ttk_y + 3 * btn_height
-	btn_gps_x = dsp_ttk_x							;	btn_gps_y = dsp_ttk_y + 4 * btn_height
 	--- Group HEADING
-	sel_hdg_x = btn_gps_x + btn_width + sep_width	;	sel_hdg_y = sel_vs_y 
+	sel_hdg_x = sel_alt_x + btn_width + sep_width	;	sel_hdg_y = sel_vs_y 
 	btn_hdg_x = sel_hdg_x							;	btn_hdg_y = sel_hdg_y +  btn_height 
 	--- Group NAV1 freq.
 	btn_app_x = sel_hdg_x							;	btn_app_y = btn_hdg_y  + btn_height + sep_height	
@@ -431,11 +415,6 @@ function main_chunk()
 		draw_string(btn_fd_x + window_width, movingDownPosition, "VS   "..math.floor(dr_act_vs), "white") 				-- actual VS
 		-- draw_string_Helvetica_18( x, y, "string" 		
 				
-		if dr_thr_mode == 3 then 														-- let's draw the gauges
-			linear_gauge(btn_at_x , btn_ap_y , 10 , 40 , {1.0, 0.0 , 0.0} , dr_n1 / 100 , 1 , 0) -- thrust reverse
-		else
-			linear_gauge(btn_at_x , btn_ap_y , 10 , 40 , {1.0, 0.0 , 0.0} , dr_n1 / 100 , 0 , 0) -- thrust normal
-		end
 		if dr_flaps > 0 then 
 			linear_gauge(btn_at_x + 15 , btn_ap_y , 10 , 40 , {0.0, 1.0 , 0.0} , dr_flaps , 0 , 1) -- flaps 
 		end
@@ -455,10 +434,6 @@ function main_chunk()
 		selector(sel_alt_x, sel_alt_y,math.floor(dr_alt))
 		selector(sel_hdg_x, sel_hdg_y, math.floor(dr_hdg + 0.5))
 		selector(sel_loc_x, sel_loc_y, dr_nav1_freq)
-		displayer(dsp_ttk_x, dsp_ttk_y, math.floor(dr_time_to_wpt).."'")
-		displayer(dsp_dtk_x, dsp_dtk_y, math.floor(dr_dist_to_wpt).."n")
-		displayer(dsp_trk_x, dsp_trk_y, math.floor(dr_hdg_to_wpt).."°")
-		displayer(dsp_wpt_x, dsp_wpt_y, dr_wpt, "white")
 		----------------  AP  --------------------------------
 		if dr_fd_mode == 0 then -- FD off, AP off
 			button(btn_fd_x, btn_fd_y, "F/D",0 , 0)	
@@ -491,30 +466,6 @@ function main_chunk()
 		if dr_alt_mode == 3 or dr_alt_mode >= 5 then button(btn_vs_x, btn_vs_y, "V/S", 0 , 0) end -- other modes
 		if dr_alt_mode == 4 then	button(btn_vs_x, btn_vs_y, "V/S", 1 , 0) end  -- VS on
 		----------------  NAV  --------------------------------
-		if dr_fd_mode == 0 or dr_ap_navmode == 0 then -- NAV is off
-			button(btn_loc_x, btn_loc_y, "LOC", 0 , 0)
-			button(btn_gps_x, btn_gps_y, "GPS", 0 , 0)
-		end 
-		if dr_fd_mode > 0 and dr_ap_navmode == 2 then -- NAV on
-			if dr_source == 0 then 
-				button(btn_loc_x, btn_loc_y, "LOC", 0 , 1) -- LOC arm
-				button(btn_gps_x, btn_gps_y, "GPS", 0 , 0) 
-			end
-			if dr_source == 1 then -- this should never happen. GPS cannot be arm ?
-				button(btn_loc_x, btn_loc_y, "LOC", 0 , 0)
-				button(btn_gps_x, btn_gps_y, "GPS", 0 , 1)
-			end
-		end
-		if dr_fd_mode > 0 and dr_ap_navmode == 2 then -- NAV on
-			if dr_source == 0 then 
-				button(btn_loc_x, btn_loc_y, "LOC", 1 , 0) --LOC on
-				button(btn_gps_x, btn_gps_y, "GPS", 0 , 0)
-			end
-			if dr_source == 2 then
-				button(btn_loc_x, btn_loc_y, "LOC", 0 , 0) -- GPS on
-				button(btn_gps_x, btn_gps_y, "GPS", 1 , 0)
-			end
-		end
 	----------------  APP  --------------------------------
 		if dr_app == 0 then	button(btn_app_x, btn_app_y, "APP", 0 , 0) end	-- off
 		if dr_app == 1 then	button(btn_app_x, btn_app_y, "APP", 0 , 1) end  -- arm
