@@ -37,7 +37,6 @@ DataRef("dr_compass", "sim/cockpit2/gauges/indicators/ground_track_mag_pilot", "
 DataRef("dr_fd_mode", "sim/cockpit2/autopilot/flight_director_mode", "writable")			-- Flight director mode : 0 fd off / 1 fd on / 2 ap on
 DataRef("dr_at", "sim/cockpit2/autopilot/autothrottle_on", "readonly")						-- Auto thrust 0 / 1
 DataRef("dr_ap_speed", "sim/cockpit2/autopilot/airspeed_dial_kts_mach", "writable")			-- ap speed in knots. Mach not supported yet
-DataRef("dr_flc", "sim/cockpit2/autopilot/speed_status", "readonly")						-- Flight level change : 0 off / 1 ? / 2 on
 DataRef("dr_alt", "sim/cockpit/autopilot/altitude", "writable")								-- ap altitude
 DataRef("dr_alt_hld","sim/cockpit2/autopilot/altitude_hold_status", "readonly")				-- Alt hold 
 DataRef("dr_alt_mode","sim/cockpit2/autopilot/altitude_mode", "readonly")					-- Alt mode
@@ -119,14 +118,6 @@ function btn_at_click()
 	end
 end
 
-function btn_flc_click()
-	if maximized == 1 and btn_click(btn_flc_x , btn_flc_y ) == 1 then 
-		if dr_fd_mode >= 1 then
-			command_once("sim/autopilot/level_change") 
-		end
-	end
-end
-
 function btn_alt_click()
 	if maximized == 1 and btn_click(btn_alt_x , btn_alt_y )then 
 		command_once("sim/autopilot/altitude_hold")
@@ -205,7 +196,6 @@ function check_click_events()
 	btn_fd_click()
 	btn_ap_click()
 	btn_at_click()
-	btn_flc_click() 
 	btn_alt_click()
 	btn_vs_click()
 	btn_loc_click()
@@ -228,7 +218,7 @@ end
 do_on_mouse_wheel("check_scroll_events()")
 
 function check_alt()
-	if maximized == 1 and dr_alt_hld == 0 and dr_flc == 2 or dr_alt_hld == 0 and dr_alt_mode == 4 then command_once("sim/autopilot/altitude_arm")	end
+	if maximized == 1 and dr_alt_hld == 0 or dr_alt_hld == 0 and dr_alt_mode == 4 then command_once("sim/autopilot/altitude_arm")	end
 end
 do_every_frame("check_alt()")
 
@@ -246,12 +236,8 @@ function init_graphics()															-- Calculate the coordinates of graphics 
 	--- Group AP
 	btn_ap_x = window_x + sep_width					;	btn_ap_y = window_y + btn_height + btn_height + btn_height + sep_height
 	btn_fd_x = window_x + sep_width					;	btn_fd_y = btn_ap_y + btn_height + sep_height
-	--- Group SPEED
-	btn_flc_x = (window_x + sep_width) + btn_width + sep_width	;	btn_flc_y = (window_y + sep_height) + 2 * btn_height + sep_height
-	sel_spd_x = btn_flc_x							;	sel_spd_y = btn_flc_y + btn_height
-	btn_at_x = btn_flc_x							;	btn_at_y = sel_spd_y + btn_height 
 	--- Group VERTICAL SPEED
-	sel_vs_x = btn_flc_x + btn_width + sep_width	;	sel_vs_y = (window_y + sep_height) 
+	sel_vs_x = btn_ap_x + btn_width + sep_width	;	sel_vs_y = (window_y + sep_height) 
 	btn_vs_x = sel_vs_x								;	btn_vs_y = sel_vs_y +  btn_height 
 	--- Group ALTITUDE
 	sel_alt_x = btn_vs_x							;	sel_alt_y = sel_spd_y
@@ -455,9 +441,6 @@ function main_chunk()
 		----------------  AT  --------------------------------
 		if dr_at == 1 then button(btn_at_x, btn_at_y, "A/TH", 1 , 0) end 
 		if dr_at == 0 then button(btn_at_x, btn_at_y, "A/TH", 0 , 0) end
-		----------------  FLC  --------------------------------
-		if dr_flc == 2 then button(btn_flc_x, btn_flc_y, "FLC", 1)	end 
-		if dr_flc == 0 or maximized == 1 and dr_flc == 10 then	button(btn_flc_x, btn_flc_y, "FLC", 0 , 0) end
 		----------------  ALT  --------------------------------
 		if dr_alt_hld == 2 then button(btn_alt_x, btn_alt_y, "ALT", 1 , 0) end 
 		if dr_alt_hld == 1 then button(btn_alt_x, btn_alt_y, "ALT", 0 , 1)	end
